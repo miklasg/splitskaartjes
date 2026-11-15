@@ -174,17 +174,16 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 /* timer */
 .timer { margin-top: 8px; width: min(100%, 330px); height: 12px; border-radius: 99px; background: var(--key); box-shadow: inset 0 0 0 2px var(--key-shadow); overflow: hidden; }
 .timer i { display: block; height: 100%; width: 100%; background: var(--good); border-radius: 99px; transform-origin: left; }
-.timer.run i { transform: scaleX(0); transition: transform 3s linear; }
+.timer.run i { transform: scaleX(0); transition: transform var(--limit, 3s) linear; }
 .timer.late i { transform: scaleX(1); background: var(--accent); transition: none; }
 .timer.stop i { transition: none; }
-/* toggle on home */
-.toggle { display: flex; align-items: center; gap: 12px; background: var(--key); border-radius: 18px; padding: 10px 14px;
-  box-shadow: 0 4px 0 var(--key-shadow); font-family: var(--font-head); font-weight: 800; font-size: 1.15rem; text-align: left; }
-.toggle .sw { width: 54px; height: 32px; border-radius: 99px; background: var(--key-shadow); position: relative; flex: none; transition: background .2s; }
-.toggle .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px #0003; }
-.toggle[aria-checked="true"] .sw { background: var(--good); }
-.toggle[aria-checked="true"] .sw::after { transform: translateX(22px); }
-.toggle small { display: block; font-family: var(--font-num); font-weight: 400; font-size: .85rem; color: var(--muted); }
+/* timer choice on home */
+.timerpick { background: var(--key); border-radius: 18px; padding: 10px 12px 12px; box-shadow: 0 4px 0 var(--key-shadow); }
+.timerpick h3 { margin: 0 0 8px 2px; font-family: var(--font-head); font-weight: 800; font-size: 1.15rem; }
+.seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.seg button { min-height: 52px; border-radius: 12px; padding: 4px 6px; background: var(--bg); font-weight: 700; font-size: 1rem; line-height: 1.15; box-shadow: inset 0 0 0 2px var(--key-shadow); }
+.seg button[aria-checked="true"] { background: var(--good); color: #fff; box-shadow: none; }
+.timerpick small { display: block; margin: 8px 2px 0; font-size: .85rem; color: var(--muted); }
 /* overview at the end */
 #done { overflow-y: auto; justify-content: flex-start; padding-top: 12px; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 1rem; color: var(--muted); }
@@ -195,6 +194,7 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 .res .mini { width: 74px; height: 56px; }
 .res .was { font-size: .8rem; color: var(--muted); min-height: 1.1em; }
 .res .was s { color: var(--bad); }
+.res .ms { font-size: .85rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
 
 @media (max-height: 700px) {
@@ -214,9 +214,18 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         <p>Kies een kaartje en speel!</p>
       </div>
     </div>
-    <button class="toggle" id="btnTimer" role="switch" aria-checked="true"><span class="sw"></span><span>Timer: 3 seconden<small>Te traag maar juist = oranje bolletje</small></span></button>
+    <div class="timerpick">
+      <h3>Timer</h3>
+      <div class="seg" id="timerSeg" role="radiogroup" aria-label="Timer">
+        <button role="radio" data-mode="off">Geen timer</button>
+        <button role="radio" data-mode="track">Tijd meten</button>
+        <button role="radio" data-mode="3">3 sec</button>
+        <button role="radio" data-mode="5">5 sec</button>
+      </div>
+      <small id="timerHelp"></small>
+    </div>
     <div class="levels" id="levels"></div>
-    <p class="parent-note">Voor ouders: de reeksen hebben dezelfde kleuren als de kaartjes van school en bevatten elke splitsing van die getallen, in willekeurige volgorde. Een mix heeft 10 kaartjes; de bolletjes tonen hoe moeilijk. Het oranje vakje moet je invullen. Met het lampje verschijnen bolletjes als hulp. Met de timer moet elk kaartje binnen 3 seconden juist zijn: groen = snel juist, oranje = juist maar te traag, rood = fout of hulp gebruikt. Op het einde zie je elk kaartje met zijn kleur. Sterren worden op dit toestel bewaard.</p>
+    <p class="parent-note">Voor ouders: de reeksen hebben dezelfde kleuren als de kaartjes van school en bevatten elke splitsing van die getallen, in willekeurige volgorde. Een mix heeft 10 kaartjes; de bolletjes tonen hoe moeilijk. Het oranje vakje moet je invullen. Met het lampje verschijnen bolletjes als hulp. Kies bij Timer: geen timer, tijd meten (zonder limiet), of een limiet van 3 of 5 seconden. Groen = snel juist, oranje = juist maar te traag, rood = fout of hulp gebruikt. Op het einde zie je elk kaartje met zijn kleur en, als de tijd gemeten wordt, hoe lang het duurde. Sterren worden op dit toestel bewaard.</p>
   </section>
 
   <section id="play" hidden>
@@ -276,10 +285,25 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   };
   let best = store.get("splits2-best", {});
   let soundOn = store.get("splits-sound", true);
-  let timerOn = store.get("splits-timer", true);
-  const LIMIT = 3000;
-  function drawTimerToggle() { $("btnTimer").setAttribute("aria-checked", timerOn); }
-  $("btnTimer").onclick = () => { timerOn = !timerOn; store.set("splits-timer", timerOn); drawTimerToggle(); sfx.tap(); };
+  // Timer mode: "off", "track" (no limit, but times are measured and shown at the end), "3" or "5" seconds
+  let timerMode = store.get("splits-timermode", store.get("splits-timer", true) ? "3" : "off");
+  const hasLimit = () => timerMode === "3" || timerMode === "5";
+  const showTimes = () => timerMode !== "off";
+  const limitMs = () => +timerMode * 1000;
+  const HELP = {
+    off: "Geen tijd. Groen = in één keer juist, rood = fout of hulp.",
+    track: "Geen tijdslimiet, maar op het einde zie je per kaartje hoe lang het duurde en het gemiddelde.",
+    "3": "Juist binnen 3 seconden = groen, juist maar trager = oranje, fout = rood.",
+    "5": "Juist binnen 5 seconden = groen, juist maar trager = oranje, fout = rood.",
+  };
+  function drawTimerPick() {
+    $("timerSeg").querySelectorAll("button").forEach(b => b.setAttribute("aria-checked", b.dataset.mode === timerMode));
+    $("timerHelp").textContent = HELP[timerMode];
+  }
+  $("timerSeg").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    timerMode = b.dataset.mode; store.set("splits-timermode", timerMode); drawTimerPick(); sfx.tap();
+  });
 
   // ---------- Sound ----------
   let ac = null;
@@ -432,17 +456,18 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   function startTimer() {
     clearTimeout(lateTimer);
     const tm = $("timer");
-    tm.hidden = !timerOn; tm.className = "timer";
+    tm.hidden = !hasLimit(); tm.className = "timer";
+    tm.style.setProperty("--limit", timerMode + "s");
     t0 = performance.now();
-    if (!timerOn) return;
+    if (!hasLimit()) return;
     void tm.offsetWidth; tm.className = "timer run";
-    lateTimer = setTimeout(() => { tm.className = "timer late"; }, LIMIT);
+    lateTimer = setTimeout(() => { tm.className = "timer late"; }, limitMs());
   }
   function stopTimer() {
     clearTimeout(lateTimer);
     const tm = $("timer");
     if (tm.classList.contains("run")) {
-      const k = Math.max(0, 1 - (performance.now() - t0) / LIMIT);
+      const k = Math.max(0, 1 - (performance.now() - t0) / limitMs());
       tm.className = "timer stop"; tm.firstElementChild.style.transform = `scaleX(${k})`;
       requestAnimationFrame(() => tm.firstElementChild.style.transform = "");
     }
@@ -527,7 +552,8 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       $("card").classList.add("pop");
       fb.className = "feedback ok"; fb.textContent = PRAISE[rnd(0, PRAISE.length - 1)] + " ★";
       stopTimer();
-      const late = timerOn && answeredAt - t0 > LIMIT;
+      cards[idx].ms = answeredAt - t0;
+      const late = hasLimit() && answeredAt - t0 > limitMs();
       if (results[idx] !== "bad") results[idx] = tries > 0 ? "bad" : late ? "slow" : "good";
       if (late && results[idx] === "slow") fb.textContent = "Juist, maar te traag";
       sfx.good();
@@ -581,18 +607,22 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     if (stars > (best[level.id] || 0)) { best[level.id] = stars; store.set("splits2-best", best); }
     $("doneTitle").textContent = stars === 3 ? "Fantastisch!" : stars === 2 ? "Goed gedaan!" : "Flink gewerkt!";
     $("bigstars").innerHTML = [1,2,3].map(i => `<span class="${i <= stars ? "on" : ""}" style="animation-delay:${i * .25}s">★</span>`).join("");
-    $("score").textContent = timerOn
+    const avg = cards.reduce((a, c) => a + (c.ms || 0), 0) / cards.length;
+    $("score").innerHTML = (hasLimit()
       ? `${good} van de ${cards.length} snel en juist`
-      : `${good} van de ${cards.length} in één keer juist`;
+      : `${good} van de ${cards.length} in één keer juist`)
+      + (showTimes() ? `<br>Gemiddeld <b>${secs(avg)}</b> per kaartje` : "");
     renderOverview(good, slow, bad);
     show("done"); sfx.win(); confetti();
   }
 
+  const secs = ms => (ms / 1000).toFixed(1).replace(".", ",") + " s";
+
   // Every card of the round, filled in, with a ring in its result colour
   function renderOverview(good, slow, bad) {
     const col = { good: "var(--good)", slow: "var(--accent)", bad: "var(--bad)" };
-    const leg = [["good", timerOn ? "snel juist" : "juist", good], ["slow", "te traag", slow], ["bad", "fout of hulp", bad]]
-      .filter(([k]) => timerOn || k !== "slow");
+    const leg = [["good", hasLimit() ? "snel juist" : "juist", good], ["slow", "te traag", slow], ["bad", "fout of hulp", bad]]
+      .filter(([k]) => hasLimit() || k !== "slow");
     $("legend").innerHTML = leg.map(([k, t, c]) => `<span><i style="background:${col[k]}"></i>${c} ${t}</span>`).join("");
     $("overview").innerHTML = cards.map(c => {
       const v = { t: c.total, l: c.left, r: c.right };
@@ -602,6 +632,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         <line x1="46" y1="24" x2="22" y2="44"/><line x1="46" y1="24" x2="70" y2="44"/>
         ${box("t", 31, 3)}${box("l", 6, 44)}${box("r", 56, 44)}
         <text x="46" y="20">${v.t}</text><text x="21" y="61">${v.l}</text><text x="71" y="61">${v.r}</text></svg>
+        ${showTimes() ? `<span class="ms">${secs(c.ms || 0)}</span>` : ""}
         <span class="was">${c.wrong !== null && c.wrong !== undefined ? `jij: <s>${c.wrong}</s>` : ""}</span></div>`;
     }).join("");
     $("done").scrollTop = 0;
@@ -632,6 +663,6 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   $("btnAgain").onclick = () => { sfx.tap(); startLevel(level.id); };
   $("btnSound").onclick = () => { soundOn = !soundOn; store.set("splits-sound", soundOn); drawSoundIcon(); sfx.tap(); };
 
-  buildPad(); drawSoundIcon(); drawTimerToggle(); renderHome();
+  buildPad(); drawSoundIcon(); drawTimerPick(); renderHome();
 })();
 </script>
