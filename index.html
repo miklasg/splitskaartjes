@@ -96,7 +96,8 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 .progress { flex: 1; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
 .progress i { width: 16px; height: 16px; border-radius: 50%; background: var(--key); box-shadow: inset 0 0 0 2px var(--key-shadow); }
 .progress i.done { background: var(--good); box-shadow: none; }
-.progress i.help { background: var(--accent); box-shadow: none; }
+.progress i.slow { background: var(--accent); box-shadow: none; }
+.progress i.bad { background: var(--bad); box-shadow: none; }
 .progress i.now { box-shadow: inset 0 0 0 3px var(--accent); }
 
 .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
@@ -150,7 +151,7 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 .key.go:disabled { opacity: .45; }
 
 /* ---------- End of round ---------- */
-#done { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+#done { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; }
 #done h2 { font-family: var(--font-head); font-weight: 800; font-size: 2.6rem; margin: 0; }
 .bigstars { font-size: 3.6rem; letter-spacing: 6px; color: var(--key-shadow); }
 .bigstars .on { color: #f5b301; display: inline-block; animation: pop .6s backwards; }
@@ -170,6 +171,30 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 .levels h3 { grid-column: 1 / -1; margin: 6px 0 -2px; font-family: var(--font-head); font-weight: 800; font-size: 1.2rem; color: var(--muted); }
 .progress.many { gap: 4px; } .progress.many i { width: 11px; height: 11px; }
 .splitcard { transition: background .3s; }
+/* timer */
+.timer { margin-top: 8px; width: min(100%, 330px); height: 12px; border-radius: 99px; background: var(--key); box-shadow: inset 0 0 0 2px var(--key-shadow); overflow: hidden; }
+.timer i { display: block; height: 100%; width: 100%; background: var(--good); border-radius: 99px; transform-origin: left; }
+.timer.run i { transform: scaleX(0); transition: transform 3s linear; }
+.timer.late i { transform: scaleX(1); background: var(--accent); transition: none; }
+.timer.stop i { transition: none; }
+/* toggle on home */
+.toggle { display: flex; align-items: center; gap: 12px; background: var(--key); border-radius: 18px; padding: 10px 14px;
+  box-shadow: 0 4px 0 var(--key-shadow); font-family: var(--font-head); font-weight: 800; font-size: 1.15rem; text-align: left; }
+.toggle .sw { width: 54px; height: 32px; border-radius: 99px; background: var(--key-shadow); position: relative; flex: none; transition: background .2s; }
+.toggle .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px #0003; }
+.toggle[aria-checked="true"] .sw { background: var(--good); }
+.toggle[aria-checked="true"] .sw::after { transform: translateX(22px); }
+.toggle small { display: block; font-family: var(--font-num); font-weight: 400; font-size: .85rem; color: var(--muted); }
+/* overview at the end */
+#done { overflow-y: auto; justify-content: flex-start; padding-top: 12px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 1rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 14px; height: 14px; border-radius: 50%; }
+.overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; width: 100%; }
+.res { border-radius: 12px; padding: 5px 4px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; background: var(--key); box-shadow: inset 0 0 0 4px var(--rc); }
+.res .mini { width: 74px; height: 56px; }
+.res .was { font-size: .8rem; color: var(--muted); min-height: 1.1em; }
+.res .was s { color: var(--bad); }
 canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
 
 @media (max-height: 700px) {
@@ -189,8 +214,9 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         <p>Kies een kaartje en speel!</p>
       </div>
     </div>
+    <button class="toggle" id="btnTimer" role="switch" aria-checked="true"><span class="sw"></span><span>Timer: 3 seconden<small>Te traag maar juist = oranje bolletje</small></span></button>
     <div class="levels" id="levels"></div>
-    <p class="parent-note">Voor ouders: de reeksen hebben dezelfde kleuren als de kaartjes van school en bevatten elke splitsing van die getallen, in willekeurige volgorde. Een mix heeft 10 kaartjes; de bolletjes tonen hoe moeilijk. Het oranje vakje moet je invullen. Met het lampje verschijnen bolletjes als hulp. Sterren worden op dit toestel bewaard.</p>
+    <p class="parent-note">Voor ouders: de reeksen hebben dezelfde kleuren als de kaartjes van school en bevatten elke splitsing van die getallen, in willekeurige volgorde. Een mix heeft 10 kaartjes; de bolletjes tonen hoe moeilijk. Het oranje vakje moet je invullen. Met het lampje verschijnen bolletjes als hulp. Met de timer moet elk kaartje binnen 3 seconden juist zijn: groen = snel juist, oranje = juist maar te traag, rood = fout of hulp gebruikt. Op het einde zie je elk kaartje met zijn kleur. Sterren worden op dit toestel bewaard.</p>
   </section>
 
   <section id="play" hidden>
@@ -205,6 +231,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
         <div class="row-top"><div class="box" id="bTop"></div></div>
         <div class="row-bot"><div class="box" id="bLeft"></div><div class="box" id="bRight"></div></div>
       </div>
+      <div class="timer" id="timer"><i></i></div>
       <div class="feedback" id="feedback"></div>
       <div class="dots" id="dots"></div>
     </div>
@@ -219,6 +246,8 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       <button class="bigbtn" id="btnDoneHome"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Start</button>
       <button class="bigbtn primary" id="btnAgain"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg>Nog eens</button>
     </div>
+    <div class="legend" id="legend"></div>
+    <div class="overview" id="overview"></div>
   </section>
 </div>
 <canvas id="confetti" hidden></canvas>
@@ -247,6 +276,10 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   };
   let best = store.get("splits2-best", {});
   let soundOn = store.get("splits-sound", true);
+  let timerOn = store.get("splits-timer", true);
+  const LIMIT = 3000;
+  function drawTimerToggle() { $("btnTimer").setAttribute("aria-checked", timerOn); }
+  $("btnTimer").onclick = () => { timerOn = !timerOn; store.set("splits-timer", timerOn); drawTimerToggle(); sfx.tap(); };
 
   // ---------- Sound ----------
   let ac = null;
@@ -309,7 +342,8 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   });
 
   // ---------- Game ----------
-  let level, cards, idx, answer, tries, results;
+  // results[i]: "good" (right first time, in time), "slow" (right first time, too slow), "bad" (wrong or hint)
+  let level, cards, idx, answer, tries, results, firstWrong, t0, lateTimer;
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
   // Every split of every total in the range: a total n has n + 1 splits (0 up to n).
@@ -373,12 +407,12 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   function renderProgress() {
     $("progress").classList.toggle("many", cards.length > 12);
     $("progress").innerHTML = cards.map((_, i) =>
-      `<i class="${i < idx ? (results[i] ? "done" : "help") : ""}${i === idx ? " now" : ""}"></i>`).join("");
+      `<i class="${i < idx ? ({ good: "done", slow: "slow", bad: "bad" })[results[i]] : ""}${i === idx ? " now" : ""}"></i>`).join("");
   }
 
   function renderCard() {
     const c = cards[idx];
-    answer = ""; tries = 0;
+    answer = ""; tries = 0; firstWrong = null;
     $("feedback").textContent = ""; $("feedback").className = "feedback";
     $("dots").innerHTML = "";
     $("card").style.background = `var(--c-${colorOf(c.total)})`;
@@ -392,6 +426,26 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     $("card").classList.remove("pop");
     requestAnimationFrame(drawLines);
     locked = false;
+    startTimer();
+  }
+
+  function startTimer() {
+    clearTimeout(lateTimer);
+    const tm = $("timer");
+    tm.hidden = !timerOn; tm.className = "timer";
+    t0 = performance.now();
+    if (!timerOn) return;
+    void tm.offsetWidth; tm.className = "timer run";
+    lateTimer = setTimeout(() => { tm.className = "timer late"; }, LIMIT);
+  }
+  function stopTimer() {
+    clearTimeout(lateTimer);
+    const tm = $("timer");
+    if (tm.classList.contains("run")) {
+      const k = Math.max(0, 1 - (performance.now() - t0) / LIMIT);
+      tm.className = "timer stop"; tm.firstElementChild.style.transform = `scaleX(${k})`;
+      requestAnimationFrame(() => tm.firstElementChild.style.transform = "");
+    }
   }
 
   function askBox() { return { t: $("bTop"), l: $("bLeft"), r: $("bRight") }[cards[idx].ask]; }
@@ -463,10 +517,16 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       el.classList.remove("bad"); el.classList.add("good");
       $("card").classList.add("pop");
       fb.className = "feedback ok"; fb.textContent = PRAISE[rnd(0, PRAISE.length - 1)] + " ★";
-      results[idx] = tries === 0; sfx.good();
+      stopTimer();
+      const late = timerOn && performance.now() - t0 > LIMIT;
+      if (results[idx] !== "bad") results[idx] = tries > 0 ? "bad" : late ? "slow" : "good";
+      if (late && results[idx] === "slow") fb.textContent = "Juist, maar te traag";
+      sfx.good();
       setTimeout(next, 1100);
     } else {
       tries++; sfx.bad();
+      if (firstWrong === null) firstWrong = answer;
+      results[idx] = "bad";
       el.classList.add("bad");
       $("card").classList.remove("shake"); void $("card").offsetWidth; $("card").classList.add("shake");
       fb.className = "feedback no"; fb.textContent = "Probeer nog eens";
@@ -492,25 +552,49 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       frames.push(`<div class="frame">${html}</div>`);
     }
     $("dots").innerHTML = frames.join("");
-    results[idx] = false;
+    results[idx] = "bad";
   }
 
   function next() {
-    if (results[idx] === undefined) results[idx] = true;
+    cards[idx].result = results[idx]; cards[idx].wrong = firstWrong;
     idx++;
     if (idx >= cards.length) return finish();
     renderCard();
   }
 
   function finish() {
-    const good = results.filter(Boolean).length;
+    clearTimeout(lateTimer);
+    const n = s => results.filter(r => r === s).length;
+    const good = n("good"), slow = n("slow"), bad = n("bad");
     const ratio = good / cards.length;
     const stars = ratio >= .9 ? 3 : ratio >= .6 ? 2 : 1;
     if (stars > (best[level.id] || 0)) { best[level.id] = stars; store.set("splits2-best", best); }
     $("doneTitle").textContent = stars === 3 ? "Fantastisch!" : stars === 2 ? "Goed gedaan!" : "Flink gewerkt!";
     $("bigstars").innerHTML = [1,2,3].map(i => `<span class="${i <= stars ? "on" : ""}" style="animation-delay:${i * .25}s">★</span>`).join("");
-    $("score").textContent = `${good} van de ${cards.length} in één keer juist`;
+    $("score").textContent = timerOn
+      ? `${good} van de ${cards.length} snel en juist`
+      : `${good} van de ${cards.length} in één keer juist`;
+    renderOverview(good, slow, bad);
     show("done"); sfx.win(); confetti();
+  }
+
+  // Every card of the round, filled in, with a ring in its result colour
+  function renderOverview(good, slow, bad) {
+    const col = { good: "var(--good)", slow: "var(--accent)", bad: "var(--bad)" };
+    const leg = [["good", timerOn ? "snel juist" : "juist", good], ["slow", "te traag", slow], ["bad", "fout of hulp", bad]]
+      .filter(([k]) => timerOn || k !== "slow");
+    $("legend").innerHTML = leg.map(([k, t, c]) => `<span><i style="background:${col[k]}"></i>${c} ${t}</span>`).join("");
+    $("overview").innerHTML = cards.map(c => {
+      const v = { t: c.total, l: c.left, r: c.right };
+      const box = (k, x, y) => `<rect x="${x}" y="${y}" width="30" height="22" style="${c.ask === k ? `stroke:${col[c.result]};stroke-width:3` : ""}"/>`;
+      return `<div class="res" style="--rc:${col[c.result]}"><svg class="mini" viewBox="0 0 92 70" aria-hidden="true">
+        <rect x="0" y="0" width="92" height="70" rx="4" style="fill:var(--c-${colorOf(c.total)});stroke:none"/>
+        <line x1="46" y1="24" x2="22" y2="44"/><line x1="46" y1="24" x2="70" y2="44"/>
+        ${box("t", 31, 3)}${box("l", 6, 44)}${box("r", 56, 44)}
+        <text x="46" y="20">${v.t}</text><text x="21" y="61">${v.l}</text><text x="71" y="61">${v.r}</text></svg>
+        <span class="was">${c.wrong !== null && c.wrong !== undefined ? `jij: <s>${c.wrong}</s>` : ""}</span></div>`;
+    }).join("");
+    $("done").scrollTop = 0;
   }
 
   // ---------- Confetti ----------
@@ -533,11 +617,11 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   }
 
   // ---------- Wiring ----------
-  $("btnHome").onclick = () => { sfx.tap(); show("home"); };
+  $("btnHome").onclick = () => { sfx.tap(); clearTimeout(lateTimer); show("home"); };
   $("btnDoneHome").onclick = () => { sfx.tap(); show("home"); };
   $("btnAgain").onclick = () => { sfx.tap(); startLevel(level.id); };
   $("btnSound").onclick = () => { soundOn = !soundOn; store.set("splits-sound", soundOn); drawSoundIcon(); sfx.tap(); };
 
-  buildPad(); drawSoundIcon(); renderHome();
+  buildPad(); drawSoundIcon(); drawTimerToggle(); renderHome();
 })();
 </script>
