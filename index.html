@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Splitsen">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="apple-touch-icon.png">
+<title>Splitskaartjes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Baloo+2:wght@600;800&display=swap">
+<style>
+/* Layout: one-screen app. Home = level tiles; play = the split card on top, a big number pad below. */
+:root {
+  --bg: #e9f1f7;
+  --card: #cfe0ea;        /* the light-blue paper of the real cards */
+  --box: #ffffff;
+  --ink: #23303a;
+  --muted: #5d7280;
+  --line: #2b3a44;
+  --accent: #f2a03d;      /* warm orange: active box, buttons */
+  --good: #3aa565;
+  --good-soft: #d5f0df;
+  --bad: #e0614f;
+  --dot-a: #3d7fd6;
+  --dot-b: #f2a03d;
+  --key: #ffffff;
+  --key-shadow: #b9cbd7;
+  --font-num: "Andika", "Comic Sans MS", system-ui, sans-serif;
+  --font-head: "Baloo 2", "Andika", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17222b; --card: #2b4352; --box: #f4f8fb; --ink: #e8f0f5; --muted: #9fb3c0; --line: #c9d8e2;
+  --accent: #f5ab4f; --good: #4cc27c; --good-soft: #234b33; --bad: #ef7a69; --dot-a: #6ea6f0; --dot-b: #f5ab4f;
+  --key: #26394a; --key-shadow: #0d151b; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #17222b; --card: #2b4352; --box: #f4f8fb; --ink: #e8f0f5; --muted: #9fb3c0; --line: #c9d8e2;
+  --accent: #f5ab4f; --good: #4cc27c; --good-soft: #234b33; --bad: #ef7a69; --dot-a: #6ea6f0; --dot-b: #f5ab4f;
+  --key: #26394a; --key-shadow: #0d151b; color-scheme: dark }
+
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-num);
+  -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.app {
+  height: 100%; display: flex; flex-direction: column; box-sizing: border-box;
+  max-width: 560px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+}
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
+
+/* ---------- Home ---------- */
+#home { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1; }
+.hello { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.hello h1 { font-family: var(--font-head); font-weight: 800; font-size: 2rem; margin: 0; line-height: 1; }
+.hello p { margin: 2px 0 0; color: var(--muted); font-size: 1rem; }
+.levels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-bottom: 8px; }
+.lvl {
+  background: var(--card); border-radius: 18px; padding: 12px 10px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  box-shadow: 0 4px 0 var(--key-shadow); transition: transform .1s;
+}
+.lvl:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--key-shadow); }
+.lvl .badge {
+  font-family: var(--font-head); font-weight: 800; font-size: 1.05rem;
+  background: var(--accent); color: #2b1a05; border-radius: 99px; padding: 0 12px; min-width: 2em;
+}
+.lvl .tag { font-size: 1.15rem; font-weight: 700; }
+.lvl .stars { font-size: 1.2rem; letter-spacing: 2px; color: var(--muted); min-height: 1.4em; }
+.lvl .stars .on { color: #f5b301; }
+.mini { width: 92px; height: 70px; }
+.mini rect { fill: var(--box); stroke: var(--line); stroke-width: 2; }
+.mini line { stroke: var(--line); stroke-width: 2; }
+.mini text { fill: #23303a; font-family: var(--font-num); font-size: 15px; font-weight: 700; text-anchor: middle; }
+.mini .q { fill: var(--accent); stroke: var(--accent); }
+.parent-note { color: var(--muted); font-size: .85rem; line-height: 1.4; margin: 0; padding-bottom: 6px; }
+
+/* ---------- Play ---------- */
+#play { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px; }
+.topbar { display: flex; align-items: center; gap: 10px; }
+.iconbtn {
+  width: 52px; height: 52px; border-radius: 16px; background: var(--key);
+  box-shadow: 0 3px 0 var(--key-shadow); display: grid; place-items: center; flex: none;
+}
+.iconbtn svg { width: 28px; height: 28px; stroke: var(--ink); fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.progress { flex: 1; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
+.progress i { width: 16px; height: 16px; border-radius: 50%; background: var(--key); box-shadow: inset 0 0 0 2px var(--key-shadow); }
+.progress i.done { background: var(--good); box-shadow: none; }
+.progress i.help { background: var(--accent); box-shadow: none; }
+.progress i.now { box-shadow: inset 0 0 0 3px var(--accent); }
+
+.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.splitcard {
+  background: var(--card); border-radius: 10px; padding: 18px 18px 20px;
+  width: min(100%, 330px); box-sizing: border-box; position: relative;
+  box-shadow: 0 6px 0 var(--key-shadow);
+}
+.splitcard svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.splitcard svg.lines line { stroke: var(--line); stroke-width: 2.5; }
+.row-top { display: flex; justify-content: center; margin-bottom: 44px; }
+.row-bot { display: flex; justify-content: space-between; }
+.box {
+  width: 112px; height: 92px; background: var(--box); border: 2.5px solid var(--line);
+  display: grid; place-items: center; position: relative; z-index: 1;
+  font-size: 4rem; font-weight: 700; line-height: 1; color: #23303a; box-sizing: border-box;
+  font-variant-numeric: tabular-nums;
+}
+.box.ask { border: 4px dashed var(--accent); }
+.box.ask.filled { border-style: solid; }
+.box.ask::after { content: ""; position: absolute; inset: -9px; border-radius: 6px; border: 3px solid transparent; }
+.box.ask:not(.filled) .cursor { width: 4px; height: 52px; background: var(--accent); border-radius: 2px; animation: blink 1s steps(2) infinite; }
+.box.good { border-color: var(--good); border-style: solid; background: var(--good-soft); color: var(--ink); }
+.box.bad { border-color: var(--bad); border-style: solid; }
+@keyframes blink { 50% { opacity: 0; } }
+.shake { animation: shake .45s; }
+@keyframes shake { 20%{transform:translateX(-10px)} 40%{transform:translateX(9px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(4px)} }
+.pop { animation: pop .5s; }
+@keyframes pop { 40% { transform: scale(1.08) rotate(-2deg); } }
+
+.feedback { height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-head); font-weight: 800; font-size: 1.7rem; }
+.feedback.ok { color: var(--good); }
+.feedback.no { color: var(--bad); }
+
+.dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; min-height: 0; max-width: 330px; }
+.frame { display: grid; grid-template-columns: repeat(5, 22px); gap: 4px; padding: 5px; border: 2px solid var(--key-shadow); border-radius: 8px; }
+.frame b { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--muted); }
+.frame b.a { background: var(--dot-a); box-shadow: none; }
+.frame b.b { background: var(--dot-b); box-shadow: none; }
+.frame b.x { box-shadow: none; }
+
+.pad { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; padding-bottom: 4px; }
+.key {
+  height: 64px; border-radius: 16px; background: var(--key); font-size: 2.2rem; font-weight: 700;
+  box-shadow: 0 4px 0 var(--key-shadow); transition: transform .06s; display: grid; place-items: center;
+}
+.key:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--key-shadow); }
+.key svg { width: 32px; height: 32px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+.key.go { background: var(--good); color: #fff; box-shadow: 0 4px 0 #22764a; grid-row: span 2; height: auto; }
+.key.hint { color: var(--accent); }
+.key.go:disabled { opacity: .45; }
+
+/* ---------- End of round ---------- */
+#done { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
+#done h2 { font-family: var(--font-head); font-weight: 800; font-size: 2.6rem; margin: 0; }
+.bigstars { font-size: 3.6rem; letter-spacing: 6px; color: var(--key-shadow); }
+.bigstars .on { color: #f5b301; display: inline-block; animation: pop .6s backwards; }
+.score { font-size: 1.4rem; color: var(--muted); }
+.actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.bigbtn { height: 72px; padding: 0 26px; border-radius: 20px; font-family: var(--font-head); font-weight: 800; font-size: 1.4rem;
+  display: flex; align-items: center; gap: 10px; background: var(--key); box-shadow: 0 4px 0 var(--key-shadow); }
+.bigbtn.primary { background: var(--good); color: #fff; box-shadow: 0 4px 0 #22764a; }
+.bigbtn svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
+:root { --c-navy: #6b9bd8; --c-blue: #d3e7f5; --c-green: #a9d382; --c-red: #f2aca2; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-navy: #1f3c6e; --c-blue: #3b5b6e; --c-green: #34522c; --c-red: #5e302c; } }
+:root[data-theme="dark"] { --c-navy: #1f3c6e; --c-blue: #3b5b6e; --c-green: #34522c; --c-red: #5e302c; }
+.lvl .diff { display: flex; gap: 4px; min-height: 1.4em; align-items: center; }
+.lvl .diff i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--muted); }
+.lvl .diff i.on { background: var(--ink); box-shadow: none; }
+.lvl.mix { background: var(--key); }
+.levels h3 { grid-column: 1 / -1; margin: 6px 0 -2px; font-family: var(--font-head); font-weight: 800; font-size: 1.2rem; color: var(--muted); }
+.progress.many { gap: 4px; } .progress.many i { width: 11px; height: 11px; }
+.splitcard { transition: background .3s; }
+canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
+
+@media (max-height: 700px) {
+  .box { width: 96px; height: 76px; font-size: 3.3rem; }
+  .row-top { margin-bottom: 30px; }
+  .key { height: 54px; font-size: 1.9rem; }
+  .frame { grid-template-columns: repeat(5, 16px); } .frame b { width: 16px; height: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="app">
+  <section id="home">
+    <div class="hello">
+      <div>
+        <h1>Splitskaartjes</h1>
+        <p>Kies een kaartje en speel!</p>
+      </div>
+    </div>
+    <div class="levels" id="levels"></div>
+    <p class="parent-note">Voor ouders: de reeksen hebben dezelfde kleuren als de kaartjes van school en bevatten elke splitsing van die getallen, in willekeurige volgorde. Een mix heeft 10 kaartjes; de bolletjes tonen hoe moeilijk. Het oranje vakje moet je invullen. Met het lampje verschijnen bolletjes als hulp. Sterren worden op dit toestel bewaard.</p>
+  </section>
+
+  <section id="play" hidden>
+    <div class="topbar">
+      <button class="iconbtn" id="btnHome" aria-label="Terug naar start"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg></button>
+      <div class="progress" id="progress"></div>
+      <button class="iconbtn" id="btnSound" aria-label="Geluid aan of uit"><svg viewBox="0 0 24 24" id="soundIcon"></svg></button>
+    </div>
+    <div class="stage">
+      <div class="splitcard" id="card">
+        <svg class="lines" id="lines"></svg>
+        <div class="row-top"><div class="box" id="bTop"></div></div>
+        <div class="row-bot"><div class="box" id="bLeft"></div><div class="box" id="bRight"></div></div>
+      </div>
+      <div class="feedback" id="feedback"></div>
+      <div class="dots" id="dots"></div>
+    </div>
+    <div class="pad" id="pad"></div>
+  </section>
+
+  <section id="done" hidden>
+    <h2 id="doneTitle">Super!</h2>
+    <div class="bigstars" id="bigstars"></div>
+    <div class="score" id="score"></div>
+    <div class="actions">
+      <button class="bigbtn" id="btnDoneHome"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>Start</button>
+      <button class="bigbtn primary" id="btnAgain"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v5h5"/></svg>Nog eens</button>
+    </div>
+  </section>
+</div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+(() => {
+  // ---------- Reeksen ----------
+  // Same colours as the school cards: blue 1-4, green 5-6, blue 7-8, red 9-10.
+  // ask: which box is empty. 'r' right, 'l' left, 't' top (the total)
+  const colorOf = total => total <= 4 ? "blue" : total <= 6 ? "green" : total <= 8 ? "navy" : "red";
+  const LEVELS = [
+    { id: "s1", kind: "serie", tag: "1 – 4",  min: 1, max: 4,  ask: ["r"], color: "blue",  sample: [4, 1, 3] },
+    { id: "s2", kind: "serie", tag: "5 – 6",  min: 5, max: 6,  ask: ["r"], color: "green", sample: [5, 2, 3] },
+    { id: "s3", kind: "serie", tag: "7 – 8",  min: 7, max: 8,  ask: ["r"], color: "navy",  sample: [8, 5, 3] },
+    { id: "s4", kind: "serie", tag: "9 – 10", min: 9, max: 10, ask: ["r"], color: "red",   sample: [10, 6, 4] },
+    { id: "m1", kind: "mix", diff: 1, tag: "1 – 6",  min: 1, max: 6,  ask: ["r"],           sample: [6, 2, 4] },
+    { id: "m2", kind: "mix", diff: 2, tag: "1 – 10", min: 1, max: 10, ask: ["r"],           sample: [9, 4, 5] },
+    { id: "m3", kind: "mix", diff: 3, tag: "5 – 10", min: 5, max: 10, ask: ["l", "r", "t"], sample: [7, 3, 4], askShow: "t" },
+  ];
+  const MIX_ROUND = 10;
+
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  };
+  let best = store.get("splits2-best", {});
+  let soundOn = store.get("splits-sound", true);
+
+  // ---------- Sound ----------
+  let ac = null;
+  function tone(freq, t0, dur, type = "sine", vol = 0.18) {
+    if (!soundOn) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = freq;
+      const s = ac.currentTime + t0;
+      g.gain.setValueAtTime(0.0001, s);
+      g.gain.exponentialRampToValueAtTime(vol, s + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
+      o.connect(g).connect(ac.destination); o.start(s); o.stop(s + dur + 0.05);
+    } catch {}
+  }
+  const sfx = {
+    tap: () => tone(660, 0, 0.08, "triangle", 0.08),
+    good: () => { tone(523, 0, .15); tone(659, .1, .15); tone(784, .2, .3); },
+    bad: () => { tone(300, 0, .18, "triangle"); tone(240, .15, .25, "triangle"); },
+    win: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, i * .12, .25, "triangle", .15)),
+  };
+  function drawSoundIcon() {
+    $("soundIcon").innerHTML = soundOn
+      ? '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/>'
+      : '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/>';
+  }
+
+  // ---------- Home ----------
+  function miniCard(ask, sample) {
+    const [t, l, r] = sample;
+    const q = (k, v) => ask === k ? "" : v;
+    const empty = k => ask === k ? "fill:none;stroke:var(--accent);stroke-dasharray:4 3" : "";
+    return `<svg class="mini" viewBox="0 0 92 70" aria-hidden="true">
+      <rect x="0" y="0" width="92" height="70" rx="4" style="fill:var(--c-${colorOf(t)});stroke:none"/>
+      <line x1="46" y1="24" x2="22" y2="44"/><line x1="46" y1="24" x2="70" y2="44"/>
+      <rect x="31" y="3" width="30" height="22" style="${empty("t")}"/>
+      <rect x="6" y="44" width="30" height="22" style="${empty("l")}"/>
+      <rect x="56" y="44" width="30" height="22" style="${empty("r")}"/>
+      <text x="46" y="20">${q("t", t)}</text><text x="21" y="61">${q("l", l)}</text><text x="71" y="61">${q("r", r)}</text>
+    </svg>`;
+  }
+  function tile(L, n) {
+    const s = best[L.id] || 0;
+    const stars = `<span class="stars">${[1,2,3].map(i => `<span class="${i <= s ? "on" : ""}">★</span>`).join("")}</span>`;
+    if (L.kind === "serie") return `<button class="lvl" data-level="${L.id}" style="background:var(--c-${L.color})" aria-label="Reeks ${L.tag}">
+        <span class="badge">${n}</span>${miniCard("r", L.sample)}<span class="tag">${L.tag}</span>${stars}</button>`;
+    return `<button class="lvl mix" data-level="${L.id}" aria-label="Mix ${L.tag}, moeilijkheid ${L.diff} van 3">
+        <span class="badge">${n}</span>${miniCard(L.askShow || "r", L.sample)}<span class="tag">${L.tag}${L.ask.length > 1 ? " ?" : ""}</span>
+        <span class="diff">${[1,2,3].map(i => `<i class="${i <= L.diff ? "on" : ""}"></i>`).join("")}</span>${stars}</button>`;
+  }
+  function renderHome() {
+    const series = LEVELS.filter(L => L.kind === "serie"), mix = LEVELS.filter(L => L.kind === "mix");
+    $("levels").innerHTML = `<h3>Reeksen</h3>` + series.map((L, i) => tile(L, i + 1)).join("")
+      + `<h3>Mix</h3>` + mix.map((L, i) => tile(L, series.length + i + 1)).join("");
+  }
+  $("levels").addEventListener("click", e => {
+    const b = e.target.closest(".lvl"); if (!b) return;
+    sfx.tap(); startLevel(b.dataset.level);
+  });
+
+  // ---------- Game ----------
+  let level, cards, idx, answer, tries, results;
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+  // Every split of every total in the range: a total n has n + 1 splits (0 up to n).
+  function allCards(L) {
+    const out = [];
+    for (let total = L.min; total <= L.max; total++)
+      for (let left = 0; left <= total; left++)
+        for (const ask of L.ask) out.push(`${total}-${left}-${ask}`);
+    return out;
+  }
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  // spread the deck so two cards in a row rarely share the same total
+  function spread(a) {
+    for (let i = 1; i < a.length; i++) {
+      if (a[i].split("-")[0] !== a[i - 1].split("-")[0]) continue;
+      const j = a.findIndex((k, n) => n > i && k.split("-")[0] !== a[i - 1].split("-")[0]);
+      if (j > 0) [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  // A series deals every card once, shuffled. A mix deals 10 cards from a shuffled deck kept on
+  // this device, so all combinations come by before any repeats.
+  function makeCards(L) {
+    let out;
+    if (L.kind === "serie") out = spread(shuffle(allCards(L)));
+    else {
+      const valid = allCards(L);
+      // in the hard mix one card shows one split, with the empty box placed at random
+      const pool = L.ask.length > 1 ? [...new Set(valid.map(k => k.slice(0, k.lastIndexOf("-"))))] : valid;
+      const okKeys = new Set(pool);
+      let deck = store.get("splits2-deck-" + L.id, []).filter(k => okKeys.has(k));
+      out = [];
+      while (out.length < MIX_ROUND) {
+        if (!deck.length) deck = spread(shuffle(pool.filter(k => !out.includes(k))));
+        if (!deck.length) deck = shuffle([...pool]);
+        out.push(deck.shift());
+      }
+      store.set("splits2-deck-" + L.id, deck);
+      if (L.ask.length > 1) out = out.map(k => `${k}-${L.ask[rnd(0, L.ask.length - 1)]}`);
+    }
+    return out.map(k => {
+      const [total, left, ask] = k.split("-");
+      return { total: +total, left: +left, right: total - left, ask };
+    });
+  }
+
+  function startLevel(id) {
+    level = LEVELS.find(l => l.id === id) || LEVELS[0];
+    cards = makeCards(level); idx = 0; results = [];
+    show("play"); renderCard();
+  }
+
+  function show(which) {
+    ["home", "play", "done"].forEach(s => $(s).hidden = s !== which);
+    if (which === "home") renderHome();
+  }
+
+  function renderProgress() {
+    $("progress").classList.toggle("many", cards.length > 12);
+    $("progress").innerHTML = cards.map((_, i) =>
+      `<i class="${i < idx ? (results[i] ? "done" : "help") : ""}${i === idx ? " now" : ""}"></i>`).join("");
+  }
+
+  function renderCard() {
+    const c = cards[idx];
+    answer = ""; tries = 0;
+    $("feedback").textContent = ""; $("feedback").className = "feedback";
+    $("dots").innerHTML = "";
+    $("card").style.background = `var(--c-${colorOf(c.total)})`;
+    const vals = { t: c.total, l: c.left, r: c.right };
+    for (const [k, el] of [["t", $("bTop")], ["l", $("bLeft")], ["r", $("bRight")]]) {
+      el.className = "box" + (c.ask === k ? " ask" : "");
+      el.textContent = c.ask === k ? "" : vals[k];
+    }
+    paintAnswer();
+    renderProgress();
+    $("card").classList.remove("pop");
+    requestAnimationFrame(drawLines);
+    locked = false;
+  }
+
+  function askBox() { return { t: $("bTop"), l: $("bLeft"), r: $("bRight") }[cards[idx].ask]; }
+  function correctValue() { const c = cards[idx]; return { t: c.total, l: c.left, r: c.right }[c.ask]; }
+
+  function paintAnswer() {
+    const el = askBox();
+    el.classList.toggle("filled", answer !== "");
+    el.innerHTML = answer === "" ? '<span class="cursor"></span>' : answer;
+    $("go").disabled = answer === "";
+  }
+
+  function drawLines() {
+    const card = $("card"), r = card.getBoundingClientRect();
+    const p = el => el.getBoundingClientRect();
+    const t = p($("bTop")), a = p($("bLeft")), b = p($("bRight"));
+    const x0 = t.left + t.width / 2 - r.left, y0 = t.bottom - r.top;
+    const xa = a.left + a.width * .62 - r.left, xb = b.left + b.width * .38 - r.left, y1 = a.top - r.top;
+    $("lines").setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
+    $("lines").innerHTML = `<line x1="${x0 - 14}" y1="${y0}" x2="${xa}" y2="${y1}"/><line x1="${x0 + 14}" y1="${y0}" x2="${xb}" y2="${y1}"/>`;
+  }
+  window.addEventListener("resize", () => { if (!$("play").hidden) drawLines(); });
+
+  // number pad
+  function buildPad() {
+    const pad = $("pad");
+    // layout: 4 columns; go spans 2 rows
+    const order = ["7","8","9","back","4","5","6","go","1","2","3","hint","0"];
+    pad.innerHTML = "";
+    const mk = k => {
+      const b = document.createElement("button");
+      b.className = "key"; b.dataset.k = k;
+      if (k === "back") { b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 6h11v12H9l-6-6z"/><path d="M12 10l4 4M16 10l-4 4"/></svg>'; b.setAttribute("aria-label", "Wissen"); }
+      else if (k === "go") { b.classList.add("go"); b.id = "go"; b.innerHTML = '<svg viewBox="0 0 24 24" style="width:42px;height:42px"><path d="M4 12.5l5 5L20 6.5"/></svg>'; b.setAttribute("aria-label", "Klaar"); }
+      else if (k === "hint") { b.classList.add("hint"); b.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>'; b.setAttribute("aria-label", "Hulp: toon bolletjes"); }
+      else b.textContent = k;
+      return b;
+    };
+    // place: row1 7 8 9 back | row2 4 5 6 go(span2) | row3 1 2 3 (go) | row4 hint 0 (span2?)
+    ["7","8","9","back","4","5","6","go","1","2","3"].forEach(k => pad.appendChild(mk(k)));
+    const h = mk("hint"); pad.appendChild(h);
+    const z = mk("0"); z.style.gridColumn = "span 2"; pad.appendChild(z);
+  }
+  let locked = false;
+  $("pad").addEventListener("click", e => {
+    const b = e.target.closest(".key"); if (!b || locked) return;
+    const k = b.dataset.k;
+    if (k === "go") return check();
+    if (k === "hint") { sfx.tap(); return showDots(); }
+    if (k === "back") { sfx.tap(); answer = answer.slice(0, -1); return paintAnswer(); }
+    sfx.tap();
+    if (answer.length >= 2) answer = k; else answer = (answer === "0" ? k : answer + k);
+    clearMark(); paintAnswer();
+  });
+  document.addEventListener("keydown", e => {
+    if ($("play").hidden || locked) return;
+    if (/^[0-9]$/.test(e.key)) { if (answer.length >= 2) answer = e.key; else answer = (answer === "0" ? e.key : answer + e.key); clearMark(); paintAnswer(); }
+    else if (e.key === "Backspace") { answer = answer.slice(0, -1); paintAnswer(); }
+    else if (e.key === "Enter") check();
+  });
+  function clearMark() { askBox().classList.remove("bad"); $("feedback").textContent = ""; $("feedback").className = "feedback"; }
+
+  const PRAISE = ["Goed zo!", "Super!", "Knap!", "Top!", "Prima!", "Joepie!", "Bravo!", "Yes!"];
+  function check() {
+    if (answer === "") return;
+    const el = askBox(), fb = $("feedback");
+    if (+answer === correctValue()) {
+      locked = true;
+      el.classList.remove("bad"); el.classList.add("good");
+      $("card").classList.add("pop");
+      fb.className = "feedback ok"; fb.textContent = PRAISE[rnd(0, PRAISE.length - 1)] + " ★";
+      results[idx] = tries === 0; sfx.good();
+      setTimeout(next, 1100);
+    } else {
+      tries++; sfx.bad();
+      el.classList.add("bad");
+      $("card").classList.remove("shake"); void $("card").offsetWidth; $("card").classList.add("shake");
+      fb.className = "feedback no"; fb.textContent = "Probeer nog eens";
+      setTimeout(() => { answer = ""; paintAnswer(); }, 700);
+      if (tries >= 2) showDots();
+    }
+  }
+
+  // Dots in ten-frames: blue = left part, orange = right part, empty ring = still to find
+  function showDots() {
+    const c = cards[idx];
+    const items = [];
+    if (c.ask === "t") { for (let i = 0; i < c.left; i++) items.push("a"); for (let i = 0; i < c.right; i++) items.push("b"); }
+    else if (c.ask === "r") { for (let i = 0; i < c.left; i++) items.push("a"); for (let i = 0; i < c.right; i++) items.push(""); }
+    else { for (let i = 0; i < c.left; i++) items.push(""); for (let i = 0; i < c.right; i++) items.push("b"); }
+    const frames = [];
+    for (let f = 0; f < Math.max(1, Math.ceil(items.length / 10)); f++) {
+      let html = "";
+      for (let i = 0; i < 10; i++) {
+        const j = f * 10 + i;
+        html += j < items.length ? `<b class="${items[j]}"></b>` : `<b class="x"></b>`;
+      }
+      frames.push(`<div class="frame">${html}</div>`);
+    }
+    $("dots").innerHTML = frames.join("");
+    results[idx] = false;
+  }
+
+  function next() {
+    if (results[idx] === undefined) results[idx] = true;
+    idx++;
+    if (idx >= cards.length) return finish();
+    renderCard();
+  }
+
+  function finish() {
+    const good = results.filter(Boolean).length;
+    const ratio = good / cards.length;
+    const stars = ratio >= .9 ? 3 : ratio >= .6 ? 2 : 1;
+    if (stars > (best[level.id] || 0)) { best[level.id] = stars; store.set("splits2-best", best); }
+    $("doneTitle").textContent = stars === 3 ? "Fantastisch!" : stars === 2 ? "Goed gedaan!" : "Flink gewerkt!";
+    $("bigstars").innerHTML = [1,2,3].map(i => `<span class="${i <= stars ? "on" : ""}" style="animation-delay:${i * .25}s">★</span>`).join("");
+    $("score").textContent = `${good} van de ${cards.length} in één keer juist`;
+    show("done"); sfx.win(); confetti();
+  }
+
+  // ---------- Confetti ----------
+  function confetti() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cv = $("confetti"), ctx = cv.getContext("2d");
+    cv.hidden = false; cv.width = innerWidth; cv.height = innerHeight;
+    const cols = ["#f2a03d", "#3d7fd6", "#3aa565", "#e0614f", "#f5b301"];
+    const ps = Array.from({ length: 120 }, () => ({
+      x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * .5,
+      vx: (Math.random() - .5) * 3, vy: 2 + Math.random() * 3, r: 4 + Math.random() * 5,
+      a: Math.random() * 6, c: cols[rnd(0, cols.length - 1)]
+    }));
+    let t = 0;
+    (function frame() {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.a += .1; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = p.c; ctx.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); ctx.restore(); });
+      if (t++ < 200) requestAnimationFrame(frame); else { ctx.clearRect(0, 0, cv.width, cv.height); cv.hidden = true; }
+    })();
+  }
+
+  // ---------- Wiring ----------
+  $("btnHome").onclick = () => { sfx.tap(); show("home"); };
+  $("btnDoneHome").onclick = () => { sfx.tap(); show("home"); };
+  $("btnAgain").onclick = () => { sfx.tap(); startLevel(level.id); };
+  $("btnSound").onclick = () => { soundOn = !soundOn; store.set("splits-sound", soundOn); drawSoundIcon(); sfx.tap(); };
+
+  buildPad(); drawSoundIcon(); renderHome();
+})();
+</script>
