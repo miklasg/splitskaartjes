@@ -103,7 +103,7 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 .progress i.bad { background: var(--bad); box-shadow: none; }
 .progress i.now { box-shadow: inset 0 0 0 3px var(--accent); }
 
-.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 8px; overflow: hidden; container-type: size; }
 .splitcard {
   background: var(--card); border-radius: 10px; padding: 18px 18px 20px;
   width: min(100%, 330px); box-sizing: border-box; position: relative;
@@ -209,6 +209,27 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   .key { height: 54px; font-size: 1.9rem; }
   .frame { grid-template-columns: repeat(5, 16px); } .frame b { width: 16px; height: 16px; }
 }
+/* when the hint dots are shown, or the play area is short, the card gets smaller so the dots fit above the number pad */
+.stage.hinting .box { width: 92px; height: 72px; font-size: 3.1rem; }
+.stage.hinting .row-top { margin-bottom: 26px; }
+.stage.hinting .splitcard { padding: 12px 14px 14px; width: min(100%, 290px); }
+.stage.hinting .feedback { height: 34px; font-size: 1.4rem; }
+.stage.hinting .frame { grid-template-columns: repeat(5, 18px); } .stage.hinting .frame b { width: 18px; height: 18px; }
+.stage > * { flex-shrink: 0; }
+.stage.hinting .feedback:empty { height: 0; }
+.stage.hinting .timer { display: none; } /* with the hint the card is orange or red anyway */
+@container (max-height: 420px) {
+  .stage.hinting .box { width: 76px; height: 58px; font-size: 2.5rem; }
+  .stage.hinting .row-top { margin-bottom: 18px; }
+  .stage.hinting .splitcard { width: min(100%, 240px); }
+}
+@container (max-height: 290px) {
+  .stage.hinting .box { width: 58px; height: 44px; font-size: 1.9rem; border-width: 2px; }
+  .stage.hinting .feedback { height: 26px; font-size: 1.15rem; }
+  .stage.hinting .frame { grid-template-columns: repeat(5, 14px); } .stage.hinting .frame b { width: 14px; height: 14px; }
+  .stage.hinting .row-top { margin-bottom: 14px; }
+  .stage.hinting .splitcard { padding: 10px 12px 12px; width: min(100%, 200px); }
+}
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 
@@ -231,7 +252,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       <small id="timerHelp"></small>
     </div>
     <div class="levels" id="levels"></div>
-    <p class="parent-note">Voor ouders: de reeksen hebben dezelfde kleuren als de kaartjes van school en bevatten elke splitsing van die getallen, in willekeurige volgorde. Een mix heeft 10 kaartjes; de bolletjes tonen hoe moeilijk. Het oranje vakje moet je invullen. Met het lampje verschijnen bolletjes als hulp. Kies bij Timer: geen timer, tijd meten (zonder limiet), of een limiet van 3 of 5 seconden. Groen = snel juist, oranje = juist maar te traag, rood = fout of hulp gebruikt. Op het einde zie je elk kaartje met zijn kleur en, als de tijd gemeten wordt, hoe lang het duurde. Sterren worden op dit toestel bewaard.</p>
+    <p class="parent-note">Voor ouders: de reeksen hebben dezelfde kleuren als de kaartjes van school en bevatten elke splitsing van die getallen, in willekeurige volgorde. Een mix heeft 10 kaartjes; de bolletjes tonen hoe moeilijk. Het oranje vakje moet je invullen. Met het lampje verschijnen bolletjes als hulp. Kies bij Timer: geen timer, tijd meten (zonder limiet), of een limiet van 3 of 5 seconden. Groen = (snel) juist, oranje = juist maar te traag of met hulp, rood = fout. Op het einde zie je elk kaartje met zijn kleur en, als de tijd gemeten wordt, hoe lang het duurde. Sterren worden op dit toestel bewaard.</p>
   </section>
 
   <section id="play" hidden>
@@ -272,7 +293,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 // Whenever the app opens or comes back to the front, ask the server for the current version
 // (bypassing the cache) and reload once if it is newer than this copy.
 (() => {
-  const VERSION = "202611182152";
+  const VERSION = "202611182209";
   let busy = false;
   async function checkUpdate() {
     if (busy || !/^https?:/.test(location.protocol)) return;
@@ -325,10 +346,10 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   // Short help under the timer buttons: what the mode does, then what each dot colour means
   const dot = (c, t) => `<span class="hk"><i style="background:var(--${c})"></i>${t}</span>`;
   const HELP = {
-    off: `<b>Zonder tijd.</b> ${dot("good", "juist")}${dot("bad", "fout of hulp")}`,
-    track: `<b>Geen limiet, wel tijd meten.</b> Op het einde: tijd per kaartje en gemiddelde.`,
-    "3": `<b>Binnen 3 seconden.</b> ${dot("good", "op tijd")}${dot("accent", "te traag")}${dot("bad", "fout of hulp")}`,
-    "5": `<b>Binnen 5 seconden.</b> ${dot("good", "op tijd")}${dot("accent", "te traag")}${dot("bad", "fout of hulp")}`,
+    off: `<b>Zonder tijd.</b> ${dot("good", "juist")}${dot("accent", "met hulp")}${dot("bad", "fout")}`,
+    track: `<b>Geen limiet, tijden op het einde.</b> ${dot("good", "juist")}${dot("accent", "met hulp")}${dot("bad", "fout")}`,
+    "3": `<b>Binnen 3 seconden.</b> ${dot("good", "op tijd")}${dot("accent", "te traag of hulp")}${dot("bad", "fout")}`,
+    "5": `<b>Binnen 5 seconden.</b> ${dot("good", "op tijd")}${dot("accent", "te traag of hulp")}${dot("bad", "fout")}`,
   };
   function drawTimerPick() {
     $("timerSeg").querySelectorAll("button").forEach(b => b.setAttribute("aria-checked", b.dataset.mode === timerMode));
@@ -400,7 +421,8 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   });
 
   // ---------- Game ----------
-  // results[i]: "good" (right first time, in time), "slow" (right first time, too slow), "bad" (wrong or hint)
+  // results[i]: "good" (right first time, in time), "slow" (right first time, too slow),
+  // "help" (used the hint, no wrong answer), "bad" (a wrong answer)
   let level, cards, idx, answer, tries, results, firstWrong, t0, lateTimer;
   const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
 
@@ -465,7 +487,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   function renderProgress() {
     $("progress").classList.toggle("many", cards.length > 12);
     $("progress").innerHTML = cards.map((_, i) =>
-      `<i class="${i < idx ? ({ good: "done", slow: "slow", bad: "bad" })[results[i]] : ""}${i === idx ? " now" : ""}"></i>`).join("");
+      `<i class="${i < idx ? ({ good: "done", slow: "slow", help: "slow", bad: "bad" })[results[i]] : ""}${i === idx ? " now" : ""}"></i>`).join("");
   }
 
   function renderCard() {
@@ -473,6 +495,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
     answer = ""; tries = 0; firstWrong = null;
     $("feedback").textContent = ""; $("feedback").className = "feedback";
     $("dots").innerHTML = "";
+    $("play").querySelector(".stage").classList.remove("hinting");
     $("card").style.background = `var(--c-${colorOf(c.total)})`;
     const vals = { t: c.total, l: c.left, r: c.right };
     for (const [k, el] of [["t", $("bTop")], ["l", $("bLeft")], ["r", $("bRight")]]) {
@@ -588,7 +611,8 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       stopTimer();
       cards[idx].ms = answeredAt - t0;
       const late = hasLimit() && answeredAt - t0 > limitMs();
-      if (results[idx] !== "bad") results[idx] = tries > 0 ? "bad" : late ? "slow" : "good";
+      // a wrong answer (bad) or the hint (help) already set the result; otherwise speed decides
+      if (!results[idx]) results[idx] = late ? "slow" : "good";
       if (late && results[idx] === "slow") fb.textContent = "Juist, maar te traag";
       sfx.good();
       setTimeout(next, 1100);
@@ -622,7 +646,9 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       frames.push(`<div class="frame">${html}</div>`);
     }
     $("dots").innerHTML = frames.join("");
-    results[idx] = "bad";
+    $("play").querySelector(".stage").classList.add("hinting");
+    if (results[idx] !== "bad") results[idx] = "help";
+    requestAnimationFrame(drawLines);
   }
 
   function next() {
@@ -635,7 +661,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   function finish() {
     clearTimeout(lateTimer);
     const n = s => results.filter(r => r === s).length;
-    const good = n("good"), slow = n("slow"), bad = n("bad");
+    const good = n("good"), slow = n("slow"), help = n("help"), bad = n("bad");
     const ratio = good / cards.length;
     const stars = ratio >= .9 ? 3 : ratio >= .6 ? 2 : 1;
     if (stars > (best[level.id] || 0)) { best[level.id] = stars; store.set("splits2-best", best); }
@@ -646,16 +672,16 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
       ? `${good} van de ${cards.length} snel en juist`
       : `${good} van de ${cards.length} in één keer juist`)
       + (showTimes() ? `<br>Gemiddeld <b>${secs(avg)}</b> per kaartje` : "");
-    renderOverview(good, slow, bad);
+    renderOverview(good, slow, help, bad);
     show("done"); sfx.win(); confetti();
   }
 
   const secs = ms => (ms / 1000).toFixed(1).replace(".", ",") + " s";
 
   // Every card of the round, filled in, with a ring in its result colour
-  function renderOverview(good, slow, bad) {
-    const col = { good: "var(--good)", slow: "var(--accent)", bad: "var(--bad)" };
-    const leg = [["good", hasLimit() ? "snel juist" : "juist", good], ["slow", "te traag", slow], ["bad", "fout of hulp", bad]]
+  function renderOverview(good, slow, help, bad) {
+    const col = { good: "var(--good)", slow: "var(--accent)", help: "var(--accent)", bad: "var(--bad)" };
+    const leg = [["good", hasLimit() ? "snel juist" : "juist", good], ["slow", "te traag", slow], ["help", "met hulp", help], ["bad", "fout", bad]]
       .filter(([k]) => hasLimit() || k !== "slow");
     $("legend").innerHTML = leg.map(([k, t, c]) => `<span><i style="background:${col[k]}"></i>${c} ${t}</span>`).join("");
     $("overview").innerHTML = cards.map(c => {
