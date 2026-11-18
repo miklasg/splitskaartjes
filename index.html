@@ -164,9 +164,9 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
   display: flex; align-items: center; gap: 10px; background: var(--key); box-shadow: 0 4px 0 var(--key-shadow); }
 .bigbtn.primary { background: var(--good); color: #fff; box-shadow: 0 4px 0 #22764a; }
 .bigbtn svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2.8; stroke-linecap: round; stroke-linejoin: round; }
-:root { --c-navy: #6b9bd8; --c-blue: #d3e7f5; --c-green: #a9d382; --c-red: #f2aca2; --c-purple: #c3aee8; --c-yellow: #f2da7e; --c-teal: #8fd6cc; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-navy: #1f3c6e; --c-blue: #3b5b6e; --c-green: #34522c; --c-red: #5e302c; --c-purple: #46345f; --c-yellow: #5a4c17; --c-teal: #1d4b46; } }
-:root[data-theme="dark"] { --c-navy: #1f3c6e; --c-blue: #3b5b6e; --c-green: #34522c; --c-red: #5e302c; --c-purple: #46345f; --c-yellow: #5a4c17; --c-teal: #1d4b46; }
+:root { --c-navy: #6b9bd8; --c-blue: #d3e7f5; --c-green: #a9d382; --c-red: #f2aca2; --c-purple: #c3aee8; --c-yellow: #f2da7e; --c-teal: #8fd6cc; --c-pink: #f2b5da; --c-orange: #f7c590; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-navy: #1f3c6e; --c-blue: #3b5b6e; --c-green: #34522c; --c-red: #5e302c; --c-purple: #46345f; --c-yellow: #5a4c17; --c-teal: #1d4b46; --c-pink: #5a2a4a; --c-orange: #5f3d1a; } }
+:root[data-theme="dark"] { --c-navy: #1f3c6e; --c-blue: #3b5b6e; --c-green: #34522c; --c-red: #5e302c; --c-purple: #46345f; --c-yellow: #5a4c17; --c-teal: #1d4b46; --c-pink: #5a2a4a; --c-orange: #5f3d1a; }
 .lvl .diff { display: flex; gap: 4px; min-height: 1.4em; align-items: center; }
 .lvl .diff i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--muted); }
 .lvl .diff i.on { background: var(--ink); box-shadow: none; }
@@ -294,7 +294,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 // Whenever the app opens or comes back to the front, ask the server for the current version
 // (bypassing the cache) and reload once if it is newer than this copy.
 (() => {
-  const VERSION = "202611182217";
+  const VERSION = "202611182221";
   let busy = false;
   async function checkUpdate() {
     if (busy || !/^https?:/.test(location.protocol)) return;
@@ -318,19 +318,19 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   // ---------- Reeksen ----------
   // Colours per series, see colorOf.
   // ask: which box is empty. 'r' right, 'l' left, 't' top (the total)
-  // School card colours: light blue 1-4, green 5-6, dark blue 7-8, red 9-10.
-  // The mixes have no school colour, so each gets its own: purple, yellow, teal.
-  const colorOf = total => total <= 4 ? "blue" : total <= 6 ? "green" : total <= 8 ? "navy" : "red";
+  // Every series its own colour: light blue 1-4, green 5-6, dark blue 7, purple 8, red 9, yellow 10.
+  // The mixes each get another one: teal, pink, orange.
+  const colorOf = total => total <= 4 ? "blue" : total <= 6 ? "green" : ({ 7: "navy", 8: "purple", 9: "red", 10: "yellow" })[total];
   const LEVELS = [
     { id: "s1", kind: "serie", tag: "1 – 4",  min: 1, max: 4,  ask: ["r"], color: "blue",  sample: [4, 1, 3] },
     { id: "s2", kind: "serie", tag: "5 – 6",  min: 5, max: 6,  ask: ["r"], color: "green", sample: [5, 2, 3] },
     { id: "s7",  kind: "serie", tag: "7",  min: 7,  max: 7,  ask: ["r"], color: "navy", sample: [7, 5, 2] },
-    { id: "s8",  kind: "serie", tag: "8",  min: 8,  max: 8,  ask: ["r"], color: "navy", sample: [8, 3, 5] },
+    { id: "s8",  kind: "serie", tag: "8",  min: 8,  max: 8,  ask: ["r"], color: "purple", sample: [8, 3, 5] },
     { id: "s9",  kind: "serie", tag: "9",  min: 9,  max: 9,  ask: ["r"], color: "red",  sample: [9, 4, 5] },
-    { id: "s10", kind: "serie", tag: "10", min: 10, max: 10, ask: ["r"], color: "red", sample: [10, 6, 4] },
-    { id: "m1", kind: "mix", color: "purple", diff: 1, tag: "1 – 6",  min: 1, max: 6,  ask: ["r"],           sample: [6, 2, 4] },
-    { id: "m2", kind: "mix", color: "yellow", diff: 2, tag: "1 – 10", min: 1, max: 10, ask: ["r"],           sample: [9, 4, 5] },
-    { id: "m3", kind: "mix", color: "teal", diff: 3, tag: "5 – 10", min: 5, max: 10, ask: ["l", "r", "t"], sample: [7, 3, 4], askShow: "t" },
+    { id: "s10", kind: "serie", tag: "10", min: 10, max: 10, ask: ["r"], color: "yellow", sample: [10, 6, 4] },
+    { id: "m1", kind: "mix", color: "teal", diff: 1, tag: "1 – 6",  min: 1, max: 6,  ask: ["r"],           sample: [6, 2, 4] },
+    { id: "m2", kind: "mix", color: "pink", diff: 2, tag: "1 – 10", min: 1, max: 10, ask: ["r"],           sample: [9, 4, 5] },
+    { id: "m3", kind: "mix", color: "orange", diff: 3, tag: "5 – 10", min: 5, max: 10, ask: ["l", "r", "t"], sample: [7, 3, 4], askShow: "t" },
   ];
   const MIX_ROUND = 10;
 
