@@ -262,6 +262,30 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 <canvas id="confetti" hidden></canvas>
 
 <script>
+// Self-update: the home-screen app on an iPad can keep an old copy open for days.
+// Whenever the app opens or comes back to the front, ask the server for the current version
+// (bypassing the cache) and reload once if it is newer than this copy.
+(() => {
+  const VERSION = "202611181856";
+  let busy = false;
+  async function checkUpdate() {
+    if (busy || !/^https?:/.test(location.protocol)) return;
+    busy = true;
+    try {
+      const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+      const { v } = await r.json();
+      // reload at most once per new version, so a stale cache can never cause a reload loop
+      if (v && v !== VERSION && new URLSearchParams(location.search).get("v") !== v)
+        location.replace(location.pathname + "?v=" + v);
+    } catch {}
+    busy = false;
+  }
+  checkUpdate();
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+  window.addEventListener("pageshow", checkUpdate);
+})();
+</script>
+<script>
 (() => {
   // ---------- Reeksen ----------
   // Same colours as the school cards: blue 1-4, green 5-6, blue 7-8, red 9-10.
