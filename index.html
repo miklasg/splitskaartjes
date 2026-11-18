@@ -186,7 +186,10 @@ button:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
 .seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .seg button { min-height: 52px; border-radius: 12px; padding: 4px 6px; background: var(--bg); font-weight: 700; font-size: 1rem; line-height: 1.15; box-shadow: inset 0 0 0 2px var(--key-shadow); }
 .seg button[aria-checked="true"] { background: var(--good); color: #fff; box-shadow: none; }
-.timerpick small { display: block; margin: 8px 2px 0; font-size: .85rem; color: var(--muted); }
+.timerpick small { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 12px; margin: 8px 2px 0; font-size: .9rem; line-height: 1.35; color: var(--muted); min-height: 2.7em; }
+.timerpick small b { color: var(--ink); font-weight: 700; }
+.timerpick .hk { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.timerpick .hk i { width: 11px; height: 11px; border-radius: 50%; }
 /* overview at the end */
 #done { overflow-y: auto; justify-content: flex-start; padding-top: 12px; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 1rem; color: var(--muted); }
@@ -269,7 +272,7 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
 // Whenever the app opens or comes back to the front, ask the server for the current version
 // (bypassing the cache) and reload once if it is newer than this copy.
 (() => {
-  const VERSION = "202611182146";
+  const VERSION = "202611182152";
   let busy = false;
   async function checkUpdate() {
     if (busy || !/^https?:/.test(location.protocol)) return;
@@ -319,15 +322,17 @@ canvas#confetti { position: fixed; inset: 0; width: 100%; height: 100%; pointer-
   const hasLimit = () => timerMode === "3" || timerMode === "5";
   const showTimes = () => timerMode !== "off";
   const limitMs = () => +timerMode * 1000;
+  // Short help under the timer buttons: what the mode does, then what each dot colour means
+  const dot = (c, t) => `<span class="hk"><i style="background:var(--${c})"></i>${t}</span>`;
   const HELP = {
-    off: "Geen tijd. Groen = in één keer juist, rood = fout of hulp.",
-    track: "Geen tijdslimiet, maar op het einde zie je per kaartje hoe lang het duurde en het gemiddelde.",
-    "3": "Juist binnen 3 seconden = groen, juist maar trager = oranje, fout = rood.",
-    "5": "Juist binnen 5 seconden = groen, juist maar trager = oranje, fout = rood.",
+    off: `<b>Zonder tijd.</b> ${dot("good", "juist")}${dot("bad", "fout of hulp")}`,
+    track: `<b>Geen limiet, wel tijd meten.</b> Op het einde: tijd per kaartje en gemiddelde.`,
+    "3": `<b>Binnen 3 seconden.</b> ${dot("good", "op tijd")}${dot("accent", "te traag")}${dot("bad", "fout of hulp")}`,
+    "5": `<b>Binnen 5 seconden.</b> ${dot("good", "op tijd")}${dot("accent", "te traag")}${dot("bad", "fout of hulp")}`,
   };
   function drawTimerPick() {
     $("timerSeg").querySelectorAll("button").forEach(b => b.setAttribute("aria-checked", b.dataset.mode === timerMode));
-    $("timerHelp").textContent = HELP[timerMode];
+    $("timerHelp").innerHTML = HELP[timerMode];
   }
   $("timerSeg").addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
